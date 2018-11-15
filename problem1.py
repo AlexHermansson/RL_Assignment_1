@@ -20,9 +20,9 @@ class Position:
     def take_action(self, action, allowed_actions):
 
         if action not in allowed_actions:
-            return
+            pass
 
-        if action == 'UP':
+        elif action == 'UP':
             self.y -= 1
 
         elif action == 'DOWN':
@@ -175,14 +175,19 @@ class Environment:
         allowed_actions_minotaur = self._allowed_actions(state.minotaur, minotaur=True)
         num_allowed_minotaur = len(allowed_actions_minotaur)
 
-        if next_state.done:
-            if state.player == self.G or state.player == state.minotaur or state.done:
-                return 1
+        try:
 
-        elif state.player.take_action(action, allowed_actions_player) == next_state.player and \
-                state.minotaur.manhattan(next_state.minotaur) == 1:
-            return 1 / num_allowed_minotaur
-        # todo: Changes for when the minotaur is allowed to stay
+            if next_state.done:
+                if state.player == self.G or state.player == state.minotaur or state.done:
+                    return 1
+
+            elif state.done==False and state.player.take_action(action, allowed_actions_player) == next_state.player and \
+                    state.minotaur.manhattan(next_state.minotaur) == 1:
+                return 1 / num_allowed_minotaur
+            # todo: Changes for when the minotaur is allowed to stay
+
+        except:
+            a=0
 
         return 0
 
