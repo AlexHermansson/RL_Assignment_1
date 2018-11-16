@@ -14,6 +14,9 @@ class Position:
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __repr__(self):
+        return "(%d, %d)" % (self.x, self.y)
+
     def manhattan(self, other):
         return int(np.abs(self.x - other.x) + np.abs(self.y - other.y))
 
@@ -39,15 +42,11 @@ class State:
 
     def __init__(self, p=None, m=None, done=False):
         self.done = done
-        if p is None:
+        if p is None and m is None:
             self.player = Position(1, 1)
+            self.minotaur = Position(5, 5)
         else:
             self.player = p
-
-        if m is None:
-            self.minotaur = Position(5, 5)
-
-        else:
             self.minotaur = m
 
 
@@ -155,9 +154,10 @@ class Environment:
                     prob = self._transition_probability(next_state, state, action)
                     self.transition_probabilities[(next_state, state, action)] = prob
 
-    def _get_all_states(self):
-        xs = [i + 1 for i in range(6)]
-        ys = [i + 1 for i in range(5)]
+    @staticmethod
+    def _get_all_states():
+        xs = range(1, 7)
+        ys = range(1, 6)
 
         states = [State(done=True)]
         for px in xs:
@@ -175,19 +175,14 @@ class Environment:
         allowed_actions_minotaur = self._allowed_actions(state.minotaur, minotaur=True)
         num_allowed_minotaur = len(allowed_actions_minotaur)
 
-        try:
+        if next_state.done:
+            if state.player == self.G or state.player == state.minotaur or state.done:
+                return 1
 
-            if next_state.done:
-                if state.player == self.G or state.player == state.minotaur or state.done:
-                    return 1
-
-            elif state.done==False and state.player.take_action(action, allowed_actions_player) == next_state.player and \
-                    state.minotaur.manhattan(next_state.minotaur) == 1:
-                return 1 / num_allowed_minotaur
-            # todo: Changes for when the minotaur is allowed to stay
-
-        except:
-            a=0
+        elif not state.done and state.player.take_action(action, allowed_actions_player) == next_state.player and \
+                state.minotaur.manhattan(next_state.minotaur) == 1:
+            return 1 / num_allowed_minotaur
+        # todo: Changes for when the minotaur is allowed to stay
 
         return 0
 
