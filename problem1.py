@@ -15,7 +15,7 @@ class Position:
         return not self.__eq__(other)
 
     def __repr__(self):
-        return "(%d, %d)" % (self.x, self.y)
+        return "(%s, %s)" % (self.x, self.y)
 
     def manhattan(self, other):
         return int(np.abs(self.x - other.x) + np.abs(self.y - other.y))
@@ -23,7 +23,7 @@ class Position:
     def take_action(self, action, allowed_actions):
 
         if action not in allowed_actions:
-            pass
+            return
 
         elif action == 'UP':
             self.y -= 1
@@ -48,6 +48,13 @@ class State:
         else:
             self.player = p
             self.minotaur = m
+
+    def __repr__(self):
+        if self.done:
+            return "Done"
+
+        else:
+            return "Player: %s, Minotaur: %s)" % (self.player, self.minotaur)
 
 
 class Environment:
@@ -179,10 +186,16 @@ class Environment:
             if state.player == self.G or state.player == state.minotaur or state.done:
                 return 1
 
-        elif not state.done and state.player.take_action(action, allowed_actions_player) == next_state.player and \
-                state.minotaur.manhattan(next_state.minotaur) == 1:
-            return 1 / num_allowed_minotaur
-        # todo: Changes for when the minotaur is allowed to stay
+        elif not state.done:
+
+            ###### THIS IS THE NEW CONDITION
+            if state.player == state.minotaur and not next_state.done:
+                return 0
+
+            state.player.take_action(action, allowed_actions_player)
+            if state.player == next_state.player and state.minotaur.manhattan(next_state.minotaur) == 1:
+                return 1 / num_allowed_minotaur
+        # todo: Change here when the minotaur is allowed to stay
 
         return 0
 
