@@ -54,6 +54,9 @@ class State:
             self.player = p
             self.minotaur = m
 
+        self.actions={'UP':[], 'DOWN':[], 'LEFT':[], 'RIGHT':[], 'WAIT':[]}
+        self.value=0
+
     def __eq__(self, other):
         return self.player == other.player and self.minotaur == other.minotaur and self.done == other.done
 
@@ -79,6 +82,7 @@ class Environment:
         self.valid_actions = {'UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT'}
         self.transition_probabilities = {}
         self.count=0
+        self.states=self.get_all_states()
         if transition_prob is None:
             self._fill_probabilities()
         else:
@@ -87,29 +91,21 @@ class Environment:
     def reward(self, state, action=None):
 
         win_reward = 1
-        loose_reward = -1
 
         # Terminal rewards
         if action is None:
-            if state.player == self.G and state.minotaur != state.player:
+            if state.player == self.G and state.minotaur != state.player and not state.done:
                 return win_reward
-
-            elif state.player == state.minotaur:
-                return loose_reward
-
             else:
                 return 0
 
         # Non-terminal rewards
         else:
-            if state.player == self.G and state.minotaur != state.player:
+            if state.player == self.G and state.minotaur != state.player and not state.done:
                 return win_reward
-
-            elif state.player == state.minotaur:
-                return loose_reward
-
             else:
                 return 0
+
 
     def _allowed_actions(self, position, minotaur=False):
 
@@ -168,14 +164,16 @@ class Environment:
 
     def _fill_probabilities(self):
 
-        states = self.get_all_states()
+        self.states = self.get_all_states()
 
-        for state in states:
-            for next_state in states:
+        for state in self.states:
+            for s_1,next_state in enumerate(self.states):
                 for action in self.valid_actions:
                     prob = self._transition_probability(next_state, state, action)
                     if prob > 0:
-                        self.transition_probabilities[(next_state, state, action)] = prob
+                        #self.transition_probabilities[(next_state, state, action)] = prob
+                        state.actions[action].append((s_1,prob))
+                        a=0
 
     @staticmethod
     def get_all_states():
@@ -205,10 +203,8 @@ class Environment:
         elif not state.done:
 
             ###### THIS IS THE NEW CONDITION 14510
-            if state.player == state.minotaur and not next_state.done:
-
+            if (state.player == state.minotaur or state.player == self.G) and not next_state.done :
                 return 0
-
             new_position = state.player.take_action(action, allowed_actions_player)
             if new_position == next_state.player and state.minotaur.manhattan(next_state.minotaur) == 1:
                 return 1 / num_allowed_minotaur
@@ -223,34 +219,28 @@ class Environment:
 
 def DP(environment, time_horizon=15):
 
-    all_states = environment.get_all_states()
+    all_states = environment.states
     all_actions = environment.valid_actions
 
     # Init V
-    V = {}
-    for state in all_states:
-        V[state] = [environment.reward(state)]
+    V=np.zeros((len(all_states),time_horizon))
+    optimal_actions=np.zeros((len(all_states),time_horizon-1))
+    for s,state in enumerate(all_states):
+        V[s,0]=environment.reward(state)
 
-
-    for t in range(1, time_horizon-1):
-        for state in all_states:
-            action_values = []
+    for t in range(1, time_horizon):
+        for s,state in enumerate(all_states):
+            action_values = np.array([])
             for action in all_actions:
                 r = environment.reward(state, action)
                 sum = r
-                for next_state in all_states:
-
-                    try:
-                        p = environment.transition_probabilities[(next_state, state, action)]
-                    except KeyError:
-                        p = 0
-
-                    v = V[next_state][t-1]
+                for s_1, p in state.actions[action]:
+                    v = V[s_1][t-1]
                     sum += p * v
-
-                action_values.append(sum)
-
-            V[state].append(max(action_values))
+                action_values=np.append(action_values,sum)
+            V[s][t] =np.max(action_values)
+            optimal_actions[s][t-1]=np.argmax(action_values)
+        a=0
 
     return V
 
@@ -268,11 +258,29 @@ def load_obj(name):
 
 if __name__ == '__main__':
 
-    trans_prob = load_obj('T')
+    #env=Environment()
+    #save_obj(env,'env')
+    env=load_obj('env')
     T = 15
+    V = DP(env, T)
+    #states=load_obj('states')
+    '''trans_prob = load_obj('T1')
+    
+    states=[]
+    for t in trans_prob:
+        states.append(t[1])
 
     env = Environment(transition_prob=trans_prob)
-    V = DP(env, T)
+    for s in states:
+        for a in env.valid_actions:
+            for s_1 in states:
+                try:
+                    p = trans_prob[(s_1, s, a)]
+                    s.actions[a].append((s_1,p))
+                except KeyError:
+                    p = 0
+    save_obj(states,'states')'''
+
 
     init_s = State(Position(1, 1), Position(5, 5))
-    print(V[init_s])
+    #print(V[init_s])'''
