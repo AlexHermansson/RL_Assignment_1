@@ -83,17 +83,17 @@ class Environment:
         else:
             self.transition_probabilities = transition_prob
 
-    def reward(self, action=None):
+    def reward(self, state, action=None):
 
         win_reward = 1
         loose_reward = -1
 
         # Terminal rewards
         if action is None:
-            if self.p == self.G and self.m != self.p:
+            if state.player == self.G and state.minotaur != state.player:
                 return win_reward
 
-            elif self.p == self.m:
+            elif state.player == state.minotaur:
                 return loose_reward
 
             else:
@@ -101,10 +101,10 @@ class Environment:
 
         # Non-terminal rewards
         else:
-            if self.p == self.G and self.m != self.p:
+            if state.player == self.G and state.minotaur != state.player:
                 return win_reward
 
-            elif self.p == self.m:
+            elif state.player == state.minotaur:
                 return loose_reward
 
             else:
@@ -167,7 +167,7 @@ class Environment:
 
     def _fill_probabilities(self):
 
-        states = self._get_all_states()
+        states = self.get_all_states()
 
         for state in states:
             for next_state in states:
@@ -177,7 +177,7 @@ class Environment:
                         self.transition_probabilities[(next_state, state, action)] = prob
 
     @staticmethod
-    def _get_all_states():
+    def get_all_states():
         xs = range(1, 7)
         ys = range(1, 6)
 
@@ -220,6 +220,41 @@ class Environment:
         pass
 
 
+def DP(environment, time_horizon=15):
+
+    all_states = environment.get_all_states()
+    all_actions = environment.valid_actions
+
+    # Init V
+    V = {}
+    for state in all_states:
+        V[state] = [environment.reward(state)]
+
+
+    for t in range(1, time_horizon-1):
+        for state in all_states:
+            action_values = []
+            for action in all_actions:
+                r = environment.reward(state, action)
+                sum = r
+                for next_state in all_states:
+
+                    try:
+                        p = environment.transition_probabilities[(next_state, state, action)]
+                    except KeyError:
+                        p = 0
+
+                    v = V[next_state][t-1]
+                    sum += p * v
+
+                action_values.append(sum)
+
+            V[state].append(max(action_values))
+
+    return V
+
+
+
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
@@ -232,23 +267,11 @@ def load_obj(name):
 
 if __name__ == '__main__':
 
-    #trans_prob = load_obj('T')
+    trans_prob = load_obj('T')
+    T = 15
 
-    #env = Environment(transition_prob=trans_prob)
-    env = Environment()
-    print(len(env.transition_probabilities))
-    print('counter:(%d)' % env.count)
+    env = Environment(transition_prob=trans_prob)
+    V = DP(env, T)
 
-    print('saving...')
-    save_obj(env.transition_probabilities, 'T')
-    print('Done!')
-
-    '''player = Position(1, 1)
-    minotaur = Position(5, 5)
-
-    state = State(done=True)
-    next_state = State(done=True)
-    action = 'RIGHT'
-    tup = (next_state, state, action)
-    print("State, next state and action: (%s, %s, %s)" % (state, next_state, action))
-    print("Transition probability: %s" % env.transition_probabilities[tup])'''
+    init_s = State(Position(1, 1), Position(5, 5))
+    print(V[init_s])
