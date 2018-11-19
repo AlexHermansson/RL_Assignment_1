@@ -214,7 +214,7 @@ class Environment:
 
         # todo: Change here when the minotaur is allowed to stay
 
-        return None
+        return 0
 
     def visualize_maze(self):
         pass
