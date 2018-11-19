@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,6 +11,9 @@ class Position:
 
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
+
+    def __hash__(self):
+        return hash(self.x) ^ hash(self.y)
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -49,6 +53,12 @@ class State:
             self.player = p
             self.minotaur = m
 
+    def __eq__(self, other):
+        return self.player == other.player and self.minotaur == other.minotaur and self.done == other.done
+
+    def __hash__(self):
+        return hash(self.player) ^ hash(self.minotaur) ^ hash(self.done)
+
     def __repr__(self):
         if self.done:
             return "Done"
@@ -59,7 +69,7 @@ class State:
 
 class Environment:
 
-    def __init__(self, t=15):
+    def __init__(self, t=15, transition_prob=None):
         self.T = t
         self.p = Position(1, 1)
         self.m = Position(5, 5)
@@ -67,7 +77,10 @@ class Environment:
         self.done = False
         self.valid_actions = {'UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT'}
         self.transition_probabilities = {}
-        self._fill_probabilities()
+        if transition_prob is None:
+            self._fill_probabilities()
+        else:
+            self.transition_probabilities = transition_prob
 
     def reward(self, action=None):
 
@@ -203,7 +216,35 @@ class Environment:
         pass
 
 
+def save_obj(obj, name):
+    with open(name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+
+def load_obj(name):
+    with open(name + '.pkl', 'rb') as f:
+        return pickle.load(f)
+
+
 if __name__ == '__main__':
 
+    # trans_prob = load_obj('T')
+
+    # env = Environment(transition_prob=trans_prob)
     env = Environment()
     print(len(env.transition_probabilities))
+
+    print('saving...')
+    save_obj(env.transition_probabilities, 'T')
+    print('Done!')
+
+    player = Position(1, 1)
+    minotaur = Position(5, 5)
+
+
+    state = State(done=True)
+    next_state = State(done=True)
+    action = 'RIGHT'
+    tup = (next_state, state, action)
+    print("State, next state and action: (%s, %s, %s)" % (state, next_state, action))
+    print("Transition probability: %s" % env.transition_probabilities[tup])
