@@ -27,7 +27,7 @@ class Position:
     def take_action(self, action, allowed_actions):
 
         if action not in allowed_actions:
-            return
+            return (00)
 
         elif action == 'UP':
             self.y -= 1
@@ -77,6 +77,7 @@ class Environment:
         self.done = False
         self.valid_actions = {'UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT'}
         self.transition_probabilities = {}
+        self.count=0
         if transition_prob is None:
             self._fill_probabilities()
         else:
@@ -172,7 +173,9 @@ class Environment:
             for next_state in states:
                 for action in self.valid_actions:
                     prob = self._transition_probability(next_state, state, action)
-                    self.transition_probabilities[(next_state, state, action)] = prob
+                    if prob:
+                        self.count+=1
+                        #self.transition_probabilities[(next_state, state, action)] = prob
 
     @staticmethod
     def _get_all_states():
@@ -203,14 +206,12 @@ class Environment:
 
             ###### THIS IS THE NEW CONDITION
             if state.player == state.minotaur and not next_state.done:
-                return 0
-
-            state.player.take_action(action, allowed_actions_player)
-            if state.player == next_state.player and state.minotaur.manhattan(next_state.minotaur) == 1:
+                return None
+            if state.minotaur.manhattan(next_state.minotaur) == 1:
                 return 1 / num_allowed_minotaur
         # todo: Change here when the minotaur is allowed to stay
 
-        return 0
+        return None
 
     def visualize_maze(self):
         pass
@@ -228,17 +229,18 @@ def load_obj(name):
 
 if __name__ == '__main__':
 
-    # trans_prob = load_obj('T')
+    #trans_prob = load_obj('T')
 
-    # env = Environment(transition_prob=trans_prob)
+    #env = Environment(transition_prob=trans_prob)
     env = Environment()
     print(len(env.transition_probabilities))
+    print('counter:(%d)' % env.count)
 
     print('saving...')
     save_obj(env.transition_probabilities, 'T')
     print('Done!')
 
-    player = Position(1, 1)
+    '''player = Position(1, 1)
     minotaur = Position(5, 5)
 
 
@@ -247,4 +249,4 @@ if __name__ == '__main__':
     action = 'RIGHT'
     tup = (next_state, state, action)
     print("State, next state and action: (%s, %s, %s)" % (state, next_state, action))
-    print("Transition probability: %s" % env.transition_probabilities[tup])
+    print("Transition probability: %s" % env.transition_probabilities[tup])'''
