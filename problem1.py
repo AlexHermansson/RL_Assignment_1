@@ -83,6 +83,7 @@ class Environment:
         self.done = False
         self.valid_actions = {'UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT'}
         self.transition_probabilities = {}
+        self.count=0
         if transition_prob is None:
             self._fill_probabilities()
         else:
@@ -210,6 +211,7 @@ class Environment:
 
             ###### THIS IS THE NEW CONDITION 14510
             if state.player == state.minotaur and not next_state.done:
+
                 return 0
 
             new_position = state.player.take_action(action, allowed_actions_player)
@@ -218,7 +220,7 @@ class Environment:
 
         # todo: Change here when the minotaur is allowed to stay
 
-        return 0
+        return None
 
     def visualize_maze(self):
         pass
@@ -236,17 +238,18 @@ def load_obj(name):
 
 if __name__ == '__main__':
 
-    # trans_prob = load_obj('T')
+    #trans_prob = load_obj('T')
 
-    # env = Environment(transition_prob=trans_prob)
+    #env = Environment(transition_prob=trans_prob)
     env = Environment()
     print(len(env.transition_probabilities))
+    print('counter:(%d)' % env.count)
 
     print('saving...')
     save_obj(env.transition_probabilities, 'T')
     print('Done!')
 
-    player = Position(1, 1)
+    '''player = Position(1, 1)
     minotaur = Position(5, 5)
 
     state = State(done=True)
@@ -254,4 +257,4 @@ if __name__ == '__main__':
     action = 'RIGHT'
     tup = (next_state, state, action)
     print("State, next state and action: (%s, %s, %s)" % (state, next_state, action))
-    print("Transition probability: %s" % env.transition_probabilities[tup])
+    print("Transition probability: %s" % env.transition_probabilities[tup])'''
