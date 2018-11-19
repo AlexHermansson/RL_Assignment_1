@@ -12,8 +12,14 @@ class Position:
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
+    def __add__(self, other):
+        return Position(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Position(self.x - other.x, self.y - other.y)
+
     def __hash__(self):
-        return hash(self.x) ^ hash(self.y)
+        return hash(str(self))
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -26,20 +32,22 @@ class Position:
 
     def take_action(self, action, allowed_actions):
 
-        if action not in allowed_actions:
-            return (00)
+
+        if action not in allowed_actions or action == 'WAIT':
+            return self
+
 
         elif action == 'UP':
-            self.y -= 1
+            return Position(self.x, self.y - 1)
 
         elif action == 'DOWN':
-            self.y += 1
+            return Position(self.x, self.y + 1)
 
         elif action == 'LEFT':
-            self.x -= 1
+            return Position(self.x - 1, self.y)
 
         elif action == 'RIGHT':
-            self.x += 1
+            return Position(self.x + 1, self.y)
 
 
 class State:
@@ -47,8 +55,8 @@ class State:
     def __init__(self, p=None, m=None, done=False):
         self.done = done
         if p is None and m is None:
-            self.player = Position(1, 1)
-            self.minotaur = Position(5, 5)
+            self.player = Position(-1, -1)
+            self.minotaur = Position(-5, -5)
         else:
             self.player = p
             self.minotaur = m
@@ -57,7 +65,7 @@ class State:
         return self.player == other.player and self.minotaur == other.minotaur and self.done == other.done
 
     def __hash__(self):
-        return hash(self.player) ^ hash(self.minotaur) ^ hash(self.done)
+        return hash(str(self))
 
     def __repr__(self):
         if self.done:
@@ -173,9 +181,9 @@ class Environment:
             for next_state in states:
                 for action in self.valid_actions:
                     prob = self._transition_probability(next_state, state, action)
-                    if prob:
-                        self.count+=1
-                        #self.transition_probabilities[(next_state, state, action)] = prob
+
+                    if prob > 0:
+                        self.transition_probabilities[(next_state, state, action)] = prob
 
     @staticmethod
     def _get_all_states():
@@ -204,10 +212,14 @@ class Environment:
 
         elif not state.done:
 
-            ###### THIS IS THE NEW CONDITION
+            ###### THIS IS THE NEW CONDITION 14510
             if state.player == state.minotaur and not next_state.done:
-                return None
-            if state.minotaur.manhattan(next_state.minotaur) == 1:
+
+                return 0
+
+            new_position = state.player.take_action(action, allowed_actions_player)
+            if new_position == next_state.player and state.minotaur.manhattan(next_state.minotaur) == 1:
+
                 return 1 / num_allowed_minotaur
         # todo: Change here when the minotaur is allowed to stay
 
@@ -242,7 +254,6 @@ if __name__ == '__main__':
 
     '''player = Position(1, 1)
     minotaur = Position(5, 5)
-
 
     state = State(done=True)
     next_state = State(done=True)
