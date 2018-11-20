@@ -2,7 +2,8 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
-## Gian is nice
+
+# Gian is nice
 
 class Position:
 
@@ -54,8 +55,8 @@ class State:
             self.player = p
             self.minotaur = m
 
-        self.actions={'UP':[], 'DOWN':[], 'LEFT':[], 'RIGHT':[], 'WAIT':[]}
-        self.value=0
+        self.actions = {'UP': [], 'DOWN': [], 'LEFT': [], 'RIGHT': [], 'WAIT': []}
+        self.value = 0
 
     def __eq__(self, other):
         return self.player == other.player and self.minotaur == other.minotaur and self.done == other.done
@@ -81,9 +82,9 @@ class Environment:
         self.done = False
         self.valid_actions = ['WAIT', 'UP', 'DOWN', 'LEFT', 'RIGHT']
         self.transition_probabilities = {}
-        self.count=0
-        self.states=self.get_all_states()
-        self.visualize_maze()
+        self.count = 0
+        self.states = self.get_all_states()
+        self.state_to_int = {state: i for i, state in enumerate(self.states)}
         if transition_prob is None:
             self._fill_probabilities()
         else:
@@ -107,7 +108,6 @@ class Environment:
             else:
                 return 0
 
-
     def _allowed_actions(self, position, minotaur=False):
 
         not_allowed = set()
@@ -126,7 +126,7 @@ class Environment:
             not_allowed.add('DOWN')
 
         if minotaur:
-            #not_allowed.add('WAIT')
+            # not_allowed.add('WAIT')
             allowed = [a for a in self.valid_actions if a not in not_allowed]
             return allowed
 
@@ -162,20 +162,17 @@ class Environment:
         if position.y == 3 and position.x in (5, 6):
             not_allowed.add('UP')
 
-        allowed=[a for a in self.valid_actions if a not in not_allowed]
+        allowed = [a for a in self.valid_actions if a not in not_allowed]
         return allowed
 
     def _fill_probabilities(self):
 
-        #self.states = self.get_all_states()
-
         for state in self.states:
-            for s_1,next_state in enumerate(self.states):
+            for s_1, next_state in enumerate(self.states):
                 for action in self.valid_actions:
                     prob = self._transition_probability(next_state, state, action)
                     if prob > 0:
-                        #self.transition_probabilities[(next_state, state, action)] = prob
-                        state.actions[action].append((s_1,prob))
+                        state.actions[action].append((s_1, prob))
 
     @staticmethod
     def get_all_states():
@@ -204,9 +201,7 @@ class Environment:
 
         elif not state.done:
 
-            ###### THIS IS THE NEW CONDITION 14510
-            if (state.player == state.minotaur or state.player == self.G) and not next_state.done :
-
+            if (state.player == state.minotaur or state.player == self.G) and not next_state.done:
                 return 0
 
             new_position = state.player.take_action(action, allowed_actions_player)
@@ -217,48 +212,39 @@ class Environment:
 
         return 0
 
-    def visualize_maze(self):
-        plt.xlim(right=6)  # adjust the right leaving left unchanged
-        plt.xlim(left=1)
-        plt.ylim(top=5)  # adjust the right leaving left unchanged
-        plt.ylim(bottom=1)
-        plt.grid()
-        plt.axis('image')
-        plt.gca().invert_yaxis()
-        plt.show()
-
 
 def DP(environment, time_horizon=15):
-
     all_states = np.asarray(environment.states)
     all_actions = environment.valid_actions
 
     # Init V
+    V = np.zeros((len(all_states), time_horizon))
+    for s, state in enumerate(all_states):
+        V[s, 0] = environment.reward(state)
 
-    V=np.zeros((len(all_states),time_horizon))
-    optimal_policy=np.zeros((len(all_states),time_horizon-1))
-    for s,state in enumerate(all_states):
-        V[s,0]=environment.reward(state)
+    # Init optimal policy
+    optimal_policy = np.zeros((len(all_states), time_horizon - 1))
 
     for t in range(1, time_horizon):
-        for s,state in enumerate(all_states):
+        for s, state in enumerate(all_states):
             action_values = np.array([])
             for action in all_actions:
                 r = environment.reward(state, action)
                 sum = r
                 for s_1, p in state.actions[action]:
-                    v = V[s_1][t-1]
+                    v = V[s_1][t - 1]
                     sum += p * v
-                action_values=np.append(action_values,sum)
-            V[s][t] =np.max(action_values)
-            optimal_policy[s][t-1]=np.argmax(action_values)
-        a=0
+                action_values = np.append(action_values, sum)
+            V[s][t] = np.max(action_values)
+            optimal_policy[s][t - 1] = np.argmax(action_values)
 
     return V, optimal_policy
 
+
 def plot_prob(time_horizon, values):
-    plt.step(range(1,time_horizon+1),values, where='post')
+    plt.step(range(1, time_horizon + 1), values, where='post')
     plt.show()
+
 
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
@@ -270,33 +256,99 @@ def load_obj(name):
         return pickle.load(f)
 
 
+def remap_position(position):
+    x = position.x - 0.5
+    y = 5.5 - position.y
+    return x, y
+
+
+def plot_action(action, position):
+
+    x, y = remap_position(position)
+
+    l = 0.1
+    arrow_width = 0.10
+
+    if action == 'LEFT':
+        start_x = x + l/2
+        start_y = y
+        plt.arrow(start_x, start_y, -l, 0, head_width=arrow_width)
+
+    elif action == 'RIGHT':
+        start_x = x - l/2
+        start_y = y
+        plt.arrow(start_x, start_y, l, 0, head_width=arrow_width)
+
+    elif action == 'UP':
+        start_x = x
+        start_y = y - l/2
+        plt.arrow(start_x, start_y, 0, l, head_width=arrow_width)
+
+    elif action == 'DOWN':
+        start_x = x
+        start_y = y + l / 2
+        plt.arrow(start_x, start_y, 0, -l, head_width=arrow_width)
+
+    elif action == 'WAIT':
+        plt.plot(x, y, 'bo', markersize=7)
+
+    else:
+        raise ValueError('Not a valid action!')
+
+
+def plot_grid():
+
+    plt.axis([0, 6, 0, 5])
+    l1 = [(1, 5), (1, 1)]
+    l2 = [(4, 4), (0, 1)]
+    l3 = [(2, 2), (5, 2)]
+    l4 = [(4, 4), (4, 2)]
+    l5 = [(4, 6), (3, 3)]
+    plt.plot(l1[0], l1[1], 'k')
+    plt.plot(l2[0], l2[1], 'k')
+    plt.plot(l3[0], l3[1], 'k')
+    plt.plot(l4[0], l4[1], 'k')
+    plt.plot(l5[0], l5[1], 'k')
+    plt.plot(4.5, 0.5, 'g*', markersize=20)
+    plt.grid()
+    ax = plt.gca()
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+
+
+def plot_minotaur(position):
+    x, y = remap_position(position)
+    plt.plot(x, y, 'ro', markersize=20)
+
+
+def visualize_policy(opt_policy, minotaur, env, timestep=1):
+
+    plot_grid()
+    plot_minotaur(minotaur)
+
+    for x in range(1, 7):
+        for y in range(1, 6):
+            player = Position(x, y)
+            if player != minotaur and player != env.G:
+                state = State(player, minotaur)
+                state_index = env.state_to_int[state]
+                action_index = opt_policy[state_index, timestep - 1]
+                action = env.valid_actions[int(action_index)]
+                plot_action(action, player)
+
+    plt.show()
+
+
 if __name__ == '__main__':
-
-    #env=Environment()
-    #save_obj(env,'env')
-    env=load_obj('env')
-    T = 150
+    # env = Environment()
+    # save_obj(env, 'env')
+    env = load_obj('env')
+    T = 15
     V, optimal_policy = DP(env, T)
-    print(V[25])
-    plot_prob(T,V[25])
-    #states=load_obj('states')
-    '''trans_prob = load_obj('T1')
-    
-    states=[]
-    for t in trans_prob:
-        states.append(t[1])
 
-    env = Environment(transition_prob=trans_prob)
-    for s in states:
-        for a in env.valid_actions:
-            for s_1 in states:
-                try:
-                    p = trans_prob[(s_1, s, a)]
-                    s.actions[a].append((s_1,p))
-                except KeyError:
-                    p = 0
-    save_obj(states,'states')'''
+    minotaur = Position(5, 3)
+    timestep = 14
+    visualize_policy(optimal_policy, minotaur, env, timestep)
 
-
-    init_s = State(Position(1, 1), Position(5, 5))
-    #print(V[init_s])'''
+    # print(V[25])
+    # plot_prob(T, V[25])
