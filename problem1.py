@@ -79,10 +79,11 @@ class Environment:
         self.m = Position(5, 5)
         self.G = Position(5, 5)
         self.done = False
-        self.valid_actions = {'UP', 'DOWN', 'LEFT', 'RIGHT', 'WAIT'}
+        self.valid_actions = ['WAIT', 'UP', 'DOWN', 'LEFT', 'RIGHT']
         self.transition_probabilities = {}
         self.count=0
         self.states=self.get_all_states()
+        self.visualize_maze()
         if transition_prob is None:
             self._fill_probabilities()
         else:
@@ -125,8 +126,9 @@ class Environment:
             not_allowed.add('DOWN')
 
         if minotaur:
-            not_allowed.add('WAIT')
-            return self.valid_actions - not_allowed
+            #not_allowed.add('WAIT')
+            allowed = [a for a in self.valid_actions if a not in not_allowed]
+            return allowed
 
         # Walls
         if position.x == 2 and position.y in (1, 2, 3):
@@ -160,11 +162,12 @@ class Environment:
         if position.y == 3 and position.x in (5, 6):
             not_allowed.add('UP')
 
-        return self.valid_actions - not_allowed
+        allowed=[a for a in self.valid_actions if a not in not_allowed]
+        return allowed
 
     def _fill_probabilities(self):
 
-        self.states = self.get_all_states()
+        #self.states = self.get_all_states()
 
         for state in self.states:
             for s_1,next_state in enumerate(self.states):
@@ -173,7 +176,6 @@ class Environment:
                     if prob > 0:
                         #self.transition_probabilities[(next_state, state, action)] = prob
                         state.actions[action].append((s_1,prob))
-                        a=0
 
     @staticmethod
     def get_all_states():
@@ -206,7 +208,7 @@ class Environment:
             if (state.player == state.minotaur or state.player == self.G) and not next_state.done :
                 return 0
             new_position = state.player.take_action(action, allowed_actions_player)
-            if new_position == next_state.player and state.minotaur.manhattan(next_state.minotaur) == 1:
+            if new_position == next_state.player and state.minotaur.manhattan(next_state.minotaur) <= 1:
                 return 1 / num_allowed_minotaur
 
         # todo: Change here when the minotaur is allowed to stay
@@ -214,17 +216,24 @@ class Environment:
         return 0
 
     def visualize_maze(self):
-        pass
+        plt.xlim(right=6)  # adjust the right leaving left unchanged
+        plt.xlim(left=1)
+        plt.ylim(top=5)  # adjust the right leaving left unchanged
+        plt.ylim(bottom=1)
+        plt.grid()
+        plt.axis('image')
+        plt.gca().invert_yaxis()
+        plt.show()
 
 
 def DP(environment, time_horizon=15):
 
-    all_states = environment.states
+    all_states = np.asarray(environment.states)
     all_actions = environment.valid_actions
 
     # Init V
     V=np.zeros((len(all_states),time_horizon))
-    optimal_actions=np.zeros((len(all_states),time_horizon-1))
+    optimal_policy=np.zeros((len(all_states),time_horizon-1))
     for s,state in enumerate(all_states):
         V[s,0]=environment.reward(state)
 
@@ -239,10 +248,14 @@ def DP(environment, time_horizon=15):
                     sum += p * v
                 action_values=np.append(action_values,sum)
             V[s][t] =np.max(action_values)
-            optimal_actions[s][t-1]=np.argmax(action_values)
+            optimal_policy[s][t-1]=np.argmax(action_values)
         a=0
 
-    return V
+    return V, optimal_policy
+
+def plot_prob(time_horizon, values):
+    plt.step(range(1,time_horizon+1),values, where='post')
+    plt.show()
 
 
 
@@ -261,8 +274,10 @@ if __name__ == '__main__':
     #env=Environment()
     #save_obj(env,'env')
     env=load_obj('env')
-    T = 15
-    V = DP(env, T)
+    T = 150
+    V, optimal_policy = DP(env, T)
+    print(V[25])
+    plot_prob(T,V[25])
     #states=load_obj('states')
     '''trans_prob = load_obj('T1')
     
