@@ -206,7 +206,9 @@ class Environment:
 
             ###### THIS IS THE NEW CONDITION 14510
             if (state.player == state.minotaur or state.player == self.G) and not next_state.done :
+
                 return 0
+
             new_position = state.player.take_action(action, allowed_actions_player)
             if new_position == next_state.player and state.minotaur.manhattan(next_state.minotaur) <= 1:
                 return 1 / num_allowed_minotaur
@@ -232,6 +234,7 @@ def DP(environment, time_horizon=15):
     all_actions = environment.valid_actions
 
     # Init V
+
     V=np.zeros((len(all_states),time_horizon))
     optimal_policy=np.zeros((len(all_states),time_horizon-1))
     for s,state in enumerate(all_states):
@@ -256,8 +259,6 @@ def DP(environment, time_horizon=15):
 def plot_prob(time_horizon, values):
     plt.step(range(1,time_horizon+1),values, where='post')
     plt.show()
-
-
 
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
