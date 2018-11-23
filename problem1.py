@@ -126,7 +126,7 @@ class Environment:
             not_allowed.add('DOWN')
 
         if minotaur:
-            # not_allowed.add('WAIT')
+            #not_allowed.add('WAIT')
             allowed = [a for a in self.valid_actions if a not in not_allowed]
             return allowed
 
@@ -218,14 +218,14 @@ def DP(environment, time_horizon=15):
     all_actions = environment.valid_actions
 
     # Init V
-    V = np.zeros((len(all_states), time_horizon))
+    V = np.zeros((len(all_states), time_horizon+1))
     for s, state in enumerate(all_states):
         V[s, 0] = environment.reward(state)
 
     # Init optimal policy
-    optimal_policy = np.zeros((len(all_states), time_horizon - 1))
+    optimal_policy = np.zeros((len(all_states), time_horizon))
 
-    for t in range(1, time_horizon):
+    for t in range(1, time_horizon+1):
         for s, state in enumerate(all_states):
             action_values = np.array([])
             for action in all_actions:
@@ -242,7 +242,7 @@ def DP(environment, time_horizon=15):
 
 
 def plot_prob(time_horizon, values):
-    plt.step(range(1, time_horizon + 1), values, where='post')
+    plt.step(range(0, time_horizon), values, where='post')
     plt.show()
 
 
@@ -340,14 +340,14 @@ def visualize_policy(opt_policy, minotaur, env, timestep=1):
 
 
 if __name__ == '__main__':
-    # env = Environment()
-    # save_obj(env, 'env')
+    #env = Environment()
+    #save_obj(env, 'env')
     env = load_obj('env')
-    T = 15
+    T = 30
     V, optimal_policy = DP(env, T)
 
-    minotaur = Position(5, 3)
-    timestep = 14
+    minotaur = Position(3, 4)
+    timestep = 15
     visualize_policy(optimal_policy, minotaur, env, timestep)
 
     # print(V[25])
