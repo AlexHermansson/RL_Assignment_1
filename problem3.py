@@ -210,8 +210,33 @@ class QAgent:
         return np.argmax(self.Q[state])
 
 
-if __name__ == '__main__':
+class SARSAAgent:
 
+    def __init__(self, num_states=256, num_actions=5, eps=0.1):
+
+        self.Q = np.zeros((num_states, num_actions))
+        self.updates = np.ones((num_states, num_actions))  # update counts for each Q-value
+        self.discount = 0.8
+        self.num_states, self.num_actions = self.Q.shape
+        self.epsilon = eps
+
+    def Q_update(self, state, action, reward, new_state, new_action):
+        lr = 1 / self.updates[state, action] ** (2 / 3)  # separate learning rate for each Q-value
+        Q = self.Q[state, action]
+        Q_next = self.Q[new_state, new_action]
+        self.Q[state, action] = (1 - lr) * Q + lr * (reward + self.discount * Q_next)
+
+        self.updates[state, action] += 1
+
+    def choose_action(self, state):
+
+        if np.random.uniform() < self.epsilon:
+            return np.random.randint(self.num_actions)
+
+        return np.argmax(self.Q[state])
+
+
+def q_training():
     env = Environment()
     agent = QAgent()
 
@@ -257,3 +282,47 @@ if __name__ == '__main__':
         # time.sleep(0.5)
 
     print("Avarage reward: %0.2f" % (rewards / steps))
+
+
+if __name__ == '__main__':
+
+    env = Environment()
+    steps = 1e7
+
+    epsilons = [0.1, 0.2, 0.3, 0.4]
+    for epsilon in epsilons:
+
+        agent = SARSAAgent(eps=epsilon)
+        state = env.get_state()  # outputs as an int, instead of a State object
+        action = agent.choose_action(state)
+        initial_state = state
+
+        V_initial = []
+
+        before = time.time()
+        print("Learning to heist the bank! \n")
+        for step in range(1, int(steps + 1)):
+
+            next_state, reward = env.step(action)
+            next_action = agent.choose_action(next_state)
+            agent.Q_update(state, action, reward, next_state, next_action)
+
+            V_initial.append(np.max(agent.Q[initial_state]))
+
+            state = next_state
+            action = next_action
+
+            if step % (steps / 10) == 0:
+                percent = (step / steps) * 100
+                n = int(percent / 10)
+                print("%3d%% " % percent + "|" + "=" * n + (10 - n) * "-" + "|")
+
+        print("Total time: %.0f seconds" % (time.time() - before))
+
+        plt.plot(V_initial, label='$\epsilon = %.1f$' % epsilon)
+
+    plt.title('Learning for a SARSA agent')
+    plt.xlabel('Steps')
+    plt.ylabel('$V^{\pi}(s_0)$', rotation=0)
+    plt.legend()
+    plt.show()
