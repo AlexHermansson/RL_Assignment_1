@@ -242,7 +242,7 @@ def DP(environment, time_horizon=15):
 
 
 def plot_prob(time_horizon, values):
-    plt.step(range(1, time_horizon + 1), values, where='post')
+    plt.step(range(1, time_horizon + 1), values, where='pre')
     plt.show()
 
 
@@ -340,15 +340,15 @@ def visualize_policy(opt_policy, minotaur, env, timestep=1):
 
 
 if __name__ == '__main__':
-    # env = Environment()
+    env = Environment()
     # save_obj(env, 'env')
-    env = load_obj('env')
-    T = 15
+    # env = load_obj('env')
+    T = 30
     V, optimal_policy = DP(env, T)
 
-    minotaur = Position(5, 3)
-    timestep = 14
-    visualize_policy(optimal_policy, minotaur, env, timestep)
+    # minotaur = Position(5, 3)
+    # timestep = 14
+    # visualize_policy(optimal_policy, minotaur, env, timestep)
 
-    # print(V[25])
-    # plot_prob(T, V[25])
+    print(V[25])
+    plot_prob(T, V[25])

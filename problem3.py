@@ -1,4 +1,4 @@
-from time import time
+import time
 from itertools import product
 import numpy as np
 import matplotlib.pyplot as plt
@@ -78,9 +78,7 @@ class Environment:
         return self.state_to_int[self.state]
 
     def step(self, action):
-        if isinstance(action, int):
-            action = self.valid_actions[action]
-
+        action = self.valid_actions[action]
         new_state = self._get_new_state(action)
         reward = self._reward()
         return new_state, reward
@@ -218,9 +216,12 @@ if __name__ == '__main__':
     agent = QAgent()
 
     prev_state = env.get_state()  # outputs as an int, instead of a State object
+    initial_state = prev_state
 
-    steps = 1e6
-    before = time()
+    steps = 1e7
+    before = time.time()
+
+    V_initial = []
 
     print("Learning to heist the bank! \n")
     for step in range(1, int(steps + 1)):
@@ -229,6 +230,7 @@ if __name__ == '__main__':
         state, reward = env.step(action)
         agent.Q_update(prev_state, action, reward, state)
 
+        V_initial.append(np.max(agent.Q[initial_state]))
         prev_state = state
 
         if step % (steps / 10) == 0:
@@ -236,7 +238,22 @@ if __name__ == '__main__':
             n = int(percent / 10)
             print("%3d%% " % percent + "|" + "=" * n + (10 - n) * "-" + "|")
 
-    print("Total time: %.0f seconds" % (time() - before))
+    print("Total time: %.0f seconds" % (time.time() - before))
 
     print("Maximum Q-value: %.2f" % np.max(agent.Q))
     print("Minimum Q-value: %.2f" % np.min(agent.Q))
+
+    plt.plot(V_initial)
+    plt.show()
+
+    rewards = 0
+    steps = 1e5
+    env.reset()
+    for step in range(int(steps)):
+        action = agent.choose_action(env.get_state(), epsilon=0)
+        _, reward = env.step(action)
+        rewards += reward
+        # env.render()
+        # time.sleep(0.5)
+
+    print("Avarage reward: %0.2f" % (rewards / steps))
