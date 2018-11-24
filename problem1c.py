@@ -259,7 +259,7 @@ def PI(environment, lambd=0.967):
                 V_1[s]+=prob*V_0[next_state_idx]
             V_1[s]=environment.reward(state,policy_action)+lambd*V_1[s]
 
-        V_0=V_1
+        V_0=np.copy(V_1)
         #policy improvement
         for s, state in enumerate(all_states):
             action_values = np.array([])
