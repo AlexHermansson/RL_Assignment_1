@@ -340,8 +340,8 @@ def visualize_policy(opt_policy, minotaur, env, timestep=1):
 
 
 if __name__ == '__main__':
-    #env = Environment()
-    #save_obj(env, 'env')
+    # env = Environment()
+    # save_obj(env, 'env')
     env = load_obj('env')
     T = 30
     V, optimal_policy = DP(env, T)
@@ -350,5 +350,5 @@ if __name__ == '__main__':
     timestep = 15
     visualize_policy(optimal_policy, minotaur, env, timestep)
 
-    # print(V[25])
-    # plot_prob(T, V[25])
+    print(V[25])
+    plot_prob(T, V[25])

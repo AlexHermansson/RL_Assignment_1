@@ -1,4 +1,5 @@
-from time import time
+import time
+from itertools import product
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -66,11 +67,18 @@ class Environment:
         self.state = State()
         self.bank = Position(2, 2)
         self.valid_actions = ['WAIT', 'UP', 'DOWN', 'LEFT', 'RIGHT']
+        self.states = []
+        self._fill_states()
+        self.state_to_int = {s: i for i, s in enumerate(self.states)}
 
     def __repr__(self):
         return self.state.__repr__()
 
+    def get_state(self):
+        return self.state_to_int[self.state]
+
     def step(self, action):
+        action = self.valid_actions[action]
         new_state = self._get_new_state(action)
         reward = self._reward()
         return new_state, reward
@@ -122,7 +130,7 @@ class Environment:
         new_state = State(new_robber_position, new_police_position)
         self.state = new_state
 
-        return new_state
+        return self.state_to_int[new_state]
 
     def _reward(self):
 
@@ -166,29 +174,86 @@ class Environment:
         allowed = [a for a in self.valid_actions if a not in not_allowed]
         return allowed
 
+    def _fill_states(self):
+        xs = range(1, 5)
+        ys = range(1, 5)
+        for r in product(xs, ys):
+            for p in product(xs, ys):
+                self.states.append(State(Position(*r), Position(*p)))
+
+
+class QAgent:
+    """ Convert states & actions to integers before using this class! """
+    def __init__(self, num_states=256, num_actions=5):
+
+        self.Q = np.zeros((num_states, num_actions))
+        self.updates = np.ones((num_states, num_actions))  # update counts for each Q-value
+        self.discount = 0.8
+        self.num_states, self.num_actions = self.Q.shape
+
+    def Q_update(self, state, action, reward, new_state):
+        lr = 1 / self.updates[state, action] ** (2 / 3)  # separate learning rate for each Q-value
+        old_Q = self.Q[state, action]
+        max_Q = np.max(self.Q[new_state])
+        self.Q[state, action] = (1 - lr) * old_Q + lr * (reward + self.discount * max_Q)
+
+        self.updates[state, action] += 1
+
+    def random_action(self):
+        return np.random.randint(self.num_actions)
+
+    def choose_action(self, state, epsilon):
+
+        if np.random.uniform() < epsilon:
+            return np.random.randint(self.num_actions)
+
+        return np.argmax(self.Q[state])
+
 
 if __name__ == '__main__':
 
     env = Environment()
-    env.render()
+    agent = QAgent()
 
-    for i in range(10):
-        a = env.sample_action()
-        s, r = env.step(a)
-        print(s)
-        print(r)
-        env.render()
+    prev_state = env.get_state()  # outputs as an int, instead of a State object
+    initial_state = prev_state
 
-    steps = 1e6
+    steps = 1e7
+    before = time.time()
 
-    before = time()
-    for i in range(1, int(steps + 1)):
-        # a = env.sample_action()
-        env.step('RIGHT')
+    V_initial = []
 
-        if i % (steps / 10) == 0:
-            percent = (i / steps) * 100
-            n = int(percent/10)
+    print("Learning to heist the bank! \n")
+    for step in range(1, int(steps + 1)):
+
+        action = agent.random_action()
+        state, reward = env.step(action)
+        agent.Q_update(prev_state, action, reward, state)
+
+        V_initial.append(np.max(agent.Q[initial_state]))
+        prev_state = state
+
+        if step % (steps / 10) == 0:
+            percent = (step / steps) * 100
+            n = int(percent / 10)
             print("%3d%% " % percent + "|" + "=" * n + (10 - n) * "-" + "|")
 
-    print("Total time: %s seconds" % (time() - before))
+    print("Total time: %.0f seconds" % (time.time() - before))
+
+    print("Maximum Q-value: %.2f" % np.max(agent.Q))
+    print("Minimum Q-value: %.2f" % np.min(agent.Q))
+
+    plt.plot(V_initial)
+    plt.show()
+
+    rewards = 0
+    steps = 1e5
+    env.reset()
+    for step in range(int(steps)):
+        action = agent.choose_action(env.get_state(), epsilon=0)
+        _, reward = env.step(action)
+        rewards += reward
+        # env.render()
+        # time.sleep(0.5)
+
+    print("Avarage reward: %0.2f" % (rewards / steps))
