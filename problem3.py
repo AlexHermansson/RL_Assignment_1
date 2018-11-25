@@ -243,7 +243,7 @@ def q_training():
     prev_state = env.get_state()  # outputs as an int, instead of a State object
     initial_state = prev_state
 
-    steps = 1e7
+    steps = 1e6
     before = time.time()
 
     V_initial = []
@@ -265,10 +265,10 @@ def q_training():
 
     print("Total time: %.0f seconds" % (time.time() - before))
 
-    print("Maximum Q-value: %.2f" % np.max(agent.Q))
-    print("Minimum Q-value: %.2f" % np.min(agent.Q))
-
-    plt.plot(V_initial)
+    plt.semilogx(V_initial, c='r')
+    plt.title('Learning for a Q-agent')
+    plt.xlabel('Steps')
+    plt.ylabel('$V^{\pi}(s_0)$', rotation=0)
     plt.show()
 
     rewards = 0
@@ -284,8 +284,7 @@ def q_training():
     print("Avarage reward: %0.2f" % (rewards / steps))
 
 
-if __name__ == '__main__':
-
+def sarsa_training():
     env = Environment()
     steps = 1e7
 
@@ -319,10 +318,16 @@ if __name__ == '__main__':
 
         print("Total time: %.0f seconds" % (time.time() - before))
 
-        plt.plot(V_initial, label='$\epsilon = %.1f$' % epsilon)
+        # plt.plot(V_initial, label='$\epsilon = %.1f$' % epsilon)
+        plt.semilogx(V_initial, label='$\epsilon = %.1f$' % epsilon)
 
     plt.title('Learning for a SARSA agent')
     plt.xlabel('Steps')
     plt.ylabel('$V^{\pi}(s_0)$', rotation=0)
     plt.legend()
     plt.show()
+
+
+if __name__ == '__main__':
+
+    q_training()
