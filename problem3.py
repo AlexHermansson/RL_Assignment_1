@@ -133,9 +133,9 @@ class Environment:
         return self.state_to_int[new_state]
 
     def _reward(self):
-
-        bank_reward = 1
-        penalty = -10
+        # Rescaled so that |r| < 1 for all r.
+        bank_reward = 0.1
+        penalty = -1
 
         robber = self.state.robber
         police = self.state.police
@@ -243,7 +243,7 @@ def q_training():
     prev_state = env.get_state()  # outputs as an int, instead of a State object
     initial_state = prev_state
 
-    steps = 1e6
+    steps = 1e7
     before = time.time()
 
     V_initial = []
@@ -266,7 +266,7 @@ def q_training():
     print("Total time: %.0f seconds" % (time.time() - before))
 
     plt.semilogx(V_initial, c='r')
-    plt.title('Learning for a Q-agent')
+    plt.title('Learning with Q-learning')
     plt.xlabel('Steps')
     plt.ylabel('$V^{\pi}(s_0)$', rotation=0)
     plt.show()
@@ -321,7 +321,7 @@ def sarsa_training():
         # plt.plot(V_initial, label='$\epsilon = %.1f$' % epsilon)
         plt.semilogx(V_initial, label='$\epsilon = %.1f$' % epsilon)
 
-    plt.title('Learning for a SARSA agent')
+    plt.title('Learning with SARSA')
     plt.xlabel('Steps')
     plt.ylabel('$V^{\pi}(s_0)$', rotation=0)
     plt.legend()
