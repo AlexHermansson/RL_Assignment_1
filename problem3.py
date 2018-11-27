@@ -242,11 +242,14 @@ def q_training():
 
     prev_state = env.get_state()  # outputs as an int, instead of a State object
     initial_state = prev_state
+    random_state = np.random.randint(256)
+    print('Random state: %d' % random_state)
 
     steps = 1e7
     before = time.time()
 
     V_initial = []
+    V_random = []
 
     print("Learning to heist the bank! \n")
     for step in range(1, int(steps + 1)):
@@ -256,6 +259,7 @@ def q_training():
         agent.Q_update(prev_state, action, reward, state)
 
         V_initial.append(np.max(agent.Q[initial_state]))
+        V_random.append(np.max(agent.Q[random_state]))
         prev_state = state
 
         if step % (steps / 10) == 0:
@@ -265,7 +269,9 @@ def q_training():
 
     print("Total time: %.0f seconds" % (time.time() - before))
 
-    plt.semilogx(V_initial, c='r')
+    plt.semilogx(V_initial, c='r', label='Initial state')
+    plt.semilogx(V_random, c='b', label='Random state')
+    plt.legend()
     plt.title('Learning with Q-learning')
     plt.xlabel('Steps')
     plt.ylabel('$V^{\pi}(s_0)$', rotation=0)
